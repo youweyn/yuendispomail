@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Temp Email by YourName</title>
+  <title>Youweyn Temp Mail</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -10,7 +10,6 @@
       padding: 30px;
       text-align: center;
     }
-
     .container {
       background: white;
       padding: 20px;
@@ -19,32 +18,27 @@
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
       border-radius: 10px;
     }
-
     .email-display {
       font-weight: bold;
       font-size: 18px;
       margin: 10px 0;
     }
-
     button {
       padding: 8px 14px;
       margin: 10px;
       font-size: 14px;
       cursor: pointer;
     }
-
     .inbox {
       margin-top: 20px;
       text-align: left;
     }
-
     .message {
       background: #f9f9f9;
       padding: 10px;
       margin-top: 10px;
       border-radius: 6px;
     }
-
     .message-body {
       background: #fff;
       padding: 8px;
@@ -57,10 +51,10 @@
 <body>
 
   <div class="container">
-    <h2>📧 Disposable Email Generator</h2>
-    <p>Created by <strong>Yuen</strong></p>
+    <h2>📧 Youweyn's Disposable Email</h2>
+    <p>Created by <strong>Youweyn</strong></p>
 
-    <div>ss
+    <div>
       <p>Your Email:</p>
       <div id="emailDisplay" class="email-display">Generating...</div>
       <button onclick="copyEmail()">📋 Copy Email</button>
@@ -90,16 +84,13 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ address: email, password })
         });
-      } catch (e) {
-        // Account might already exist
-      }
+      } catch {}
 
       const res = await fetch(`${api}/token`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ address: email, password })
       });
-
       const data = await res.json();
       token = data.token;
 
@@ -119,21 +110,14 @@
 
     async function fetchInbox() {
       if (!token) return;
-
       const res = await fetch(`${api}/messages`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-
       const inbox = await res.json();
       const container = document.getElementById("inboxContent");
-      container.innerHTML = "";
+      container.innerHTML = inbox["hydra:member"].length ? '' : '<p>No messages yet.</p>';
 
-      if (inbox["hydra:member"].length === 0) {
-        container.innerHTML = "<p>No messages yet.</p>";
-        return;
-      }
-
-      for (let msg of inbox["hydra:member"]) {
+      inbox["hydra:member"].forEach(msg => {
         const div = document.createElement("div");
         div.className = "message";
         div.innerHTML = `
@@ -143,7 +127,7 @@
           <div class="message-body" id="msg-${msg.id}"></div>
         `;
         container.appendChild(div);
-      }
+      });
     }
 
     async function viewMessage(id) {
