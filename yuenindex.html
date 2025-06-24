@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Temp Email by YourName</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f2f2;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .container {
+      background: white;
+      padding: 20px;
+      margin: auto;
+      max-width: 500px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      border-radius: 10px;
+    }
+
+    .email-display {
+      font-weight: bold;
+      font-size: 18px;
+      margin: 10px 0;
+    }
+
+    button {
+      padding: 8px 14px;
+      margin: 10px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .inbox {
+      margin-top: 20px;
+      text-align: left;
+    }
+
+    .message {
+      background: #f9f9f9;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 6px;
+    }
+
+    .message-body {
+      background: #fff;
+      padding: 8px;
+      margin-top: 6px;
+      border-radius: 4px;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>📧 Disposable Email Generator</h2>
+    <p>Created by <strong>Yuen</strong></p>
+
+    <div>ss
+      <p>Your Email:</p>
+      <div id="emailDisplay" class="email-display">Generating...</div>
+      <button onclick="copyEmail()">📋 Copy Email</button>
+      <p id="copyStatus"></p>
+    </div>
+
+    <div class="inbox">
+      <h3>Inbox (updates every 10s)</h3>
+      <div id="inboxContent">Loading...</div>
+    </div>
+  </div>
+
+  <script>
+    const api = 'https://api.mail.tm';
+    let token = '';
+    let email = '';
+    let password = 'Temp1234!';
+    let interval;
+
+    async function init() {
+      const username = Math.random().toString(36).substring(2, 10);
+      email = `${username}@mail.tm`;
+
+      try {
+        await fetch(`${api}/accounts`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ address: email, password })
+        });
+      } catch (e) {
+        // Account might already exist
+      }
+
+      const res = await fetch(`${api}/token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address: email, password })
+      });
+
+      const data = await res.json();
+      token = data.token;
+
+      document.getElementById("emailDisplay").textContent = email;
+      fetchInbox();
+      interval = setInterval(fetchInbox, 10000);
+    }
+
+    function copyEmail() {
+      navigator.clipboard.writeText(email).then(() => {
+        document.getElementById("copyStatus").textContent = "✅ Copied!";
+        setTimeout(() => {
+          document.getElementById("copyStatus").textContent = "";
+        }, 2000);
+      });
+    }
+
+    async function fetchInbox() {
+      if (!token) return;
+
+      const res = await fetch(`${api}/messages`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      const inbox = await res.json();
+      const container = document.getElementById("inboxContent");
+      container.innerHTML = "";
+
+      if (inbox["hydra:member"].length === 0) {
+        container.innerHTML = "<p>No messages yet.</p>";
+        return;
+      }
+
+      for (let msg of inbox["hydra:member"]) {
+        const div = document.createElement("div");
+        div.className = "message";
+        div.innerHTML = `
+          <strong>From:</strong> ${msg.from.address}<br>
+          <strong>Subject:</strong> ${msg.subject}<br>
+          <button onclick="viewMessage('${msg.id}')">View Message</button>
+          <div class="message-body" id="msg-${msg.id}"></div>
+        `;
+        container.appendChild(div);
+      }
+    }
+
+    async function viewMessage(id) {
+      const res = await fetch(`${api}/messages/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const msg = await res.json();
+      document.getElementById(`msg-${id}`).textContent = msg.text || "(No content)";
+    }
+
+    init();
+  </script>
+
+</body>
+</html>
